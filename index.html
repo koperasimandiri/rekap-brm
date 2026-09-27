@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rekap Penjualan Buku RM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .fade-in { animation: fadeIn .35s ease-out both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+    <header class="border-b border-slate-200 bg-white">
+        <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <div class="flex items-center gap-3">
+                <div class="rounded-xl bg-blue-600 p-3 text-white shadow-lg shadow-blue-200"><i data-lucide="book-open-check" class="h-6 w-6"></i></div>
+                <div>
+                    <h1 class="text-lg font-extrabold text-slate-900">Rekap Penjualan Buku RM</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="connection-status" class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                    <span class="h-2 w-2 rounded-full bg-amber-500"></span> Mode contoh
+                </span>
+                <button id="refresh-btn" type="button" title="Muat ulang data" class="rounded-lg border border-slate-200 bg-white p-2.5 text-slate-600 transition hover:bg-slate-100"><i data-lucide="refresh-cw" class="h-4 w-4"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 lg:px-8">
+        <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <button id="add-sale-btn" type="button" class="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-200 transition hover:bg-blue-700"><i data-lucide="plus" class="h-4 w-4"></i> Catat Penjualan</button>
+        </section>
+
+        <section class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-xl border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><span class="text-sm font-semibold text-slate-500">Total transaksi</span><i data-lucide="receipt-text" class="h-5 w-5 text-blue-600"></i></div><p id="summary-transactions" class="mt-3 text-2xl font-extrabold text-slate-900">0</p><p class="mt-1 text-xs text-slate-500">Sesuai filter aktif</p></div>
+            <div class="rounded-xl border border-slate-200 bg-white p-5"><div class="flex items-center justify-between"><span class="text-sm font-semibold text-slate-500">Buku terjual</span><i data-lucide="books" class="h-5 w-5 text-emerald-600"></i></div><p id="summary-books" class="mt-3 text-2xl font-extrabold text-slate-900">0</p><p class="mt-1 text-xs text-slate-500">Total eksemplar</p></div>
+        </section>
+
+        <section class="rounded-xl border border-slate-200 bg-white p-5">
+            <div class="mb-4 flex items-center gap-2"><i data-lucide="sliders-horizontal" class="h-5 w-5 text-blue-600"></i><h3 class="font-bold text-slate-900">Filter rekap</h3></div>
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                <label class="text-sm font-semibold text-slate-700">Kelas<select id="filter-class" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"><option value="">Semua kelas</option></select></label>
+                <label class="text-sm font-semibold text-slate-700">Mata pelajaran<select id="filter-subject" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"><option value="">Semua mata pelajaran</option></select></label>
+                <label class="text-sm font-semibold text-slate-700">Dari tanggal<input id="filter-start" type="date" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></label>
+                <label class="text-sm font-semibold text-slate-700">Sampai tanggal<input id="filter-end" type="date" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></label>
+                <label class="text-sm font-semibold text-slate-700">Cari<input id="filter-search" type="search" placeholder="Nama atau judul buku" class="mt-2 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-normal outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"></label>
+            </div>
+        </section>
+
+        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div class="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="font-bold text-slate-900">Data transaksi</h3><p id="table-caption" class="mt-1 text-xs text-slate-500">Menampilkan 0 transaksi</p></div></div>
+            <div class="overflow-x-auto"><table class="w-full min-w-[700px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Tanggal</th><th class="px-5 py-3">Kelas</th><th class="px-5 py-3">Mata pelajaran</th><th class="px-5 py-3">Judul buku</th><th class="px-5 py-3 text-right">Jumlah</th></tr></thead><tbody id="sales-table" class="divide-y divide-slate-100"></tbody></table></div>
+            <div id="empty-state" class="hidden px-5 py-12 text-center"><i data-lucide="clipboard-x" class="mx-auto h-9 w-9 text-slate-300"></i><p class="mt-3 font-semibold text-slate-700">Belum ada transaksi yang cocok</p><p class="mt-1 text-sm text-slate-500">Ubah filter atau tambahkan penjualan baru.</p></div>
+        </section>
+    </main>
+
+    <div id="sale-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 p-4">
+        <div class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 px-6 py-4"><div><h3 class="font-bold text-slate-900">Catat penjualan buku</h3><p class="mt-1 text-xs text-slate-500">Data akan dikirim ke Google Sheet.</p></div><button id="close-modal-btn" type="button" title="Tutup" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><i data-lucide="x" class="h-5 w-5"></i></button></div>
+            <form id="sale-form" class="grid gap-4 p-6 sm:grid-cols-2">
+                <label class="text-sm font-semibold text-slate-700">Tanggal<input name="Tanggal" type="date" required class="field"></label>
+                <label class="text-sm font-semibold text-slate-700">Kelas<select name="Kelas" required class="field"></select></label>
+                <label class="text-sm font-semibold text-slate-700">Mata pelajaran<select name="Mata Pelajaran" required class="field"></select></label>
+                <label class="text-sm font-semibold text-slate-700">Judul buku<select name="Judul Buku" required class="field" disabled></select></label>
+                <label class="text-sm font-semibold text-slate-700">Jumlah<input name="Jumlah" type="number" min="1" required value="1" class="field"></label>
+                <div class="flex justify-end gap-3 sm:col-span-2"><button id="cancel-modal-btn" type="button" class="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batal</button><button id="save-sale-btn" type="submit" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-blue-700"><i data-lucide="save" class="h-4 w-4"></i>Simpan transaksi</button></div>
+            </form>
+        </div>
+    </div>
+    <div id="toast" class="fixed bottom-5 right-5 z-[60] hidden max-w-sm rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg"></div>
+
+    <script>
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzeuBx8aYHuhzq8_BuhBcT2A8ktK9V3p4kY71A-N4jn6eub8HRgOoMZ5zFj5rmbw6H9/exec';
+        const CLASSES = ['7A','7B','7C','7D','7E','7F','8A','8B','8C','8D','8E','8F','9A','9B','9C','9D','9E','9F'];
+        const SUBJECTS = ['Pendidikan Agama','PPKn','Bahasa Indonesia','Matematika','IPA','IPS','Bahasa Inggris','PJOK','Informatika','Seni Budaya','Bahasa Jawa','Bimbingan Konseling'];
+        const BOOK_GRADES = ['7', '8', '9'];
+        const DEMO_DATA = [
+            {Tanggal:'2026-01-10',Kelas:'7A','Mata Pelajaran':'Matematika','Judul Buku':'Rangkuman Matematika Kelas 7',Jumlah:'24'},
+            {Tanggal:'2026-01-12',Kelas:'8C','Mata Pelajaran':'IPA','Judul Buku':'Rangkuman IPA Kelas 8',Jumlah:'18'},
+            {Tanggal:'2026-01-15',Kelas:'9F','Mata Pelajaran':'Bahasa Indonesia','Judul Buku':'Rangkuman Bahasa Indonesia Kelas 9',Jumlah:'30'}
+        ];
+        let sales = [];
+        let visibleSales = [];
+        const $ = id => document.getElementById(id);
+        const dateText = value => { if (!value) return '-'; const d = new Date(`${value}T00:00:00`); return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); };
+        const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+
+        function updateBookOptions(subject) {
+            const bookSelect = document.querySelector('select[name="Judul Buku"]');
+            if (!bookSelect) return;
+            if (!subject) {
+                bookSelect.innerHTML = '<option value="">Pilih mata pelajaran terlebih dahulu</option>';
+                bookSelect.disabled = true;
+                return;
+            }
+            bookSelect.innerHTML = '<option value="">Pilih judul buku</option>' + BOOK_GRADES.map(grade => {
+                const title = `${subject} ${grade}`;
+                return `<option value="${esc(title)}">${esc(title)}</option>`;
+            }).join('');
+            bookSelect.disabled = false;
+        }
+
+        function fillOptions() {
+            const filterClass = $('filter-class'); const filterSubject = $('filter-subject');
+            CLASSES.forEach(item => filterClass.insertAdjacentHTML('beforeend', `<option value="${item}">${item}</option>`));
+            SUBJECTS.forEach(item => filterSubject.insertAdjacentHTML('beforeend', `<option value="${esc(item)}">${esc(item)}</option>`));
+            document.querySelectorAll('select[name="Kelas"]').forEach(select => { select.innerHTML = '<option value="">Pilih kelas</option>' + CLASSES.map(item => `<option>${item}</option>`).join(''); });
+            document.querySelectorAll('select[name="Mata Pelajaran"]').forEach(select => { select.innerHTML = '<option value="">Pilih mata pelajaran</option>' + SUBJECTS.map(item => `<option>${esc(item)}</option>`).join(''); });
+            updateBookOptions('');
+            document.querySelector('input[name="Tanggal"]').value = new Date().toISOString().slice(0,10);
+        }
+
+        function normalize(row) {
+            return {...row, Tanggal: row.Tanggal || '', Jumlah: Number(row['Jumlah'] || row.jumlah || 0)};
+        }
+
+        async function loadData() {
+            const status = $('connection-status');
+            if (!WEB_APP_URL || WEB_APP_URL.includes('GANTI_DENGAN')) { sales = DEMO_DATA.map(normalize); status.innerHTML = '<span class="h-2 w-2 rounded-full bg-amber-500"></span> Mode contoh'; status.className = 'inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700'; render(); return; }
+            status.innerHTML = '<span class="h-2 w-2 animate-pulse rounded-full bg-blue-500"></span> Memuat data...';
+            try {
+                const response = await fetch(WEB_APP_URL); if (!response.ok) throw new Error('Gagal menghubungi Web App');
+                const result = await response.json(); if (!result.success) throw new Error(result.message || 'Data tidak tersedia');
+                sales = (result.data || []).map(normalize); status.innerHTML = '<span class="h-2 w-2 rounded-full bg-emerald-500"></span> Terhubung ke Google Sheet'; status.className = 'inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700'; render();
+            } catch (error) { sales = []; status.innerHTML = '<span class="h-2 w-2 rounded-full bg-rose-500"></span> Gagal terhubung'; status.className = 'inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700'; showToast(error.message, 'error'); render(); }
+        }
+
+        function getFilteredSales() {
+            const cls = $('filter-class').value, subject = $('filter-subject').value, start = $('filter-start').value, end = $('filter-end').value, search = $('filter-search').value.toLowerCase().trim();
+            return sales.filter(row => (!cls || row.Kelas === cls) && (!subject || row['Mata Pelajaran'] === subject) && (!start || row.Tanggal >= start) && (!end || row.Tanggal <= end) && (!search || `${row['Judul Buku']} ${row.Kelas} ${row['Mata Pelajaran']}`.toLowerCase().includes(search))).sort((a,b) => String(b.Tanggal).localeCompare(String(a.Tanggal)));
+        }
+
+        function render() {
+            visibleSales = getFilteredSales(); const totalBooks = visibleSales.reduce((sum,row) => sum + row.Jumlah, 0);
+            $('summary-transactions').textContent = visibleSales.length.toLocaleString('id-ID'); $('summary-books').textContent = totalBooks.toLocaleString('id-ID'); $('table-caption').textContent = `Menampilkan ${visibleSales.length.toLocaleString('id-ID')} transaksi`;
+            $('sales-table').innerHTML = visibleSales.map(row => `<tr class="hover:bg-slate-50"><td class="whitespace-nowrap px-5 py-3 text-slate-600">${esc(dateText(row.Tanggal))}</td><td class="px-5 py-3 font-bold text-slate-900">${esc(row.Kelas)}</td><td class="px-5 py-3">${esc(row['Mata Pelajaran'])}</td><td class="max-w-xs px-5 py-3 font-medium text-slate-700">${esc(row['Judul Buku'])}</td><td class="px-5 py-3 text-right font-semibold">${row.Jumlah.toLocaleString('id-ID')}</td></tr>`).join(''); $('empty-state').classList.toggle('hidden', visibleSales.length > 0); lucide.createIcons();
+        }
+
+        function showToast(message, type='success') { const toast = $('toast'); toast.textContent = message; toast.className = `fixed bottom-5 right-5 z-[60] max-w-sm rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg ${type === 'error' ? 'bg-rose-600' : 'bg-slate-900'}`; setTimeout(() => toast.classList.add('hidden'), 3500); }
+        function toggleModal(show) { $('sale-modal').classList.toggle('hidden', !show); $('sale-modal').classList.toggle('flex', show); }
+
+        async function saveSale(event) {
+            event.preventDefault(); if (!WEB_APP_URL || WEB_APP_URL.includes('GANTI_DENGAN')) { showToast('Isi URL Web App terlebih dahulu sebelum menyimpan data.', 'error'); return; }
+            const form = new FormData(event.target); const payload = Object.fromEntries(form.entries()); const button = $('save-sale-btn'); button.disabled = true; button.classList.add('opacity-60');
+            try { await fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body: JSON.stringify(payload)}); sales.unshift(normalize(payload)); render(); showToast('Transaksi berhasil dikirim ke Google Sheet.'); event.target.reset(); updateBookOptions(''); document.querySelector('#sale-form input[name="Tanggal"]').value = new Date().toISOString().slice(0,10); toggleModal(false); } catch (error) { showToast('Transaksi gagal dikirim: ' + error.message, 'error'); } finally { button.disabled = false; button.classList.remove('opacity-60'); }
+        }
+
+        function exportCsv() { const headers = ['Tanggal','Kelas','Mata Pelajaran','Judul Buku','Jumlah']; const csv = [headers, ...visibleSales.map(row => headers.map(header => `"${String(row[header] ?? '').replaceAll('"','""')}"`))].map(row => row.join(',')).join('\n'); const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'}); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'rekap-penjualan-buku.csv'; link.click(); URL.revokeObjectURL(link.href); }
+
+        document.addEventListener('DOMContentLoaded', () => { fillOptions(); lucide.createIcons(); loadData(); document.querySelectorAll('#filter-class,#filter-subject,#filter-start,#filter-end,#filter-search').forEach(input => input.addEventListener('input', render)); document.querySelector('#sale-form select[name="Mata Pelajaran"]').addEventListener('change', event => updateBookOptions(event.target.value)); $('refresh-btn').addEventListener('click', loadData); $('add-sale-btn').addEventListener('click', () => toggleModal(true)); $('close-modal-btn').addEventListener('click', () => toggleModal(false)); $('cancel-modal-btn').addEventListener('click', () => toggleModal(false)); $('sale-form').addEventListener('submit', saveSale); $('sale-modal').addEventListener('click', event => { if (event.target === $('sale-modal')) toggleModal(false); }); });
+    </script>
+    <style>.field { margin-top: .5rem; width: 100%; border: 1px solid #e2e8f0; border-radius: .5rem; background: #f8fafc; padding: .625rem .75rem; font-size: .875rem; font-weight: 400; outline: none; } .field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px #dbeafe; }</style>
+</body>
+</html>
